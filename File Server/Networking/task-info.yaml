@@ -82,6 +82,12 @@ files:
         }
     }
   learner_created: false
+- name: src/client/Main.java
+  visible: true
+  learner_created: true
 feedback_link: https://hyperskill.org/projects/52/stages/284/implement#comment
-status: Unchecked
+status: Solved
+feedback:
+  message: Congratulations!
+  time: Sat, 20 Nov 2021 19:50:45 UTC
 record: -1

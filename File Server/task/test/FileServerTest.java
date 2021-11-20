@@ -1,281 +1,66 @@
+import org.hyperskill.hstest.dynamic.input.DynamicTestingMethod;
+import org.hyperskill.hstest.exception.outcomes.WrongAnswer;
 import org.hyperskill.hstest.stage.StageTest;
 import org.hyperskill.hstest.testcase.CheckResult;
-import org.hyperskill.hstest.testcase.TestCase;
-
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.ArrayList;
-import java.util.List;
+import org.hyperskill.hstest.testing.TestedProgram;
 
 
-class Clue {
-    public String output;
-    public String feedback;
+public class FileServerTest extends StageTest<String> {
 
-    public Clue(String output, String feedback) {
-        this.feedback = feedback;
-        this.output = output;
-    }
-}
+    @DynamicTestingMethod
+    CheckResult test() throws InterruptedException {
 
-public class FileServerTest extends StageTest<Clue> {
+        TestedProgram client = new TestedProgram("client");
+        TestedProgram server = new TestedProgram("server");
+        server.setReturnOutputAfterExecution(true);
 
+        server.startInBackground();
 
-    @Override
-    public List<TestCase<Clue>> generate() {
-        List<TestCase<Clue>> testCases = new ArrayList<>();
-        LinkedHashMap<String, Clue> inputsWithClues = generateInputsWithClues();
-        inputsWithClues.forEach((input, clue) -> {
-            TestCase<Clue> testCase = new TestCase<>();
-            testCase.setInput(input);
-            testCase.setAttach(clue);
-            testCases.add(testCase);
-        });
-        return testCases;
-    }
+        Thread.sleep(1000);
+        String serverOutput = server.getOutput().trim();
 
-    @Override
-    public CheckResult check(String reply, Clue clue) {
-        String[] linesWoSpaces = Arrays.stream(reply.trim().split("\n"))
-            .map(String::trim).filter(line -> !line.isBlank())
-            .toArray(String[]::new);
+        String serverStartedMessage = "Server started!";
+        if (!serverOutput.equals(serverStartedMessage)) {
+            throw new WrongAnswer("Server output should be \"" + serverStartedMessage + "\" until the client connects!");
+        }
 
-        reply = String.join("\n", linesWoSpaces);
+        String clientOutput = client.start().trim();
+        serverOutput = server.getOutput().trim();
 
-        return new CheckResult(reply.equals(clue.output), clue.feedback);
-    }
+        if (clientOutput.isEmpty()) {
+            return CheckResult.wrong("Client output shouldn't be empty!");
+        }
 
-    public static LinkedHashMap<String, Clue> generateInputsWithClues() {
-        LinkedHashMap<String, Clue> inputsWithClues = new LinkedHashMap<>();
-        String input, output, feedback;
-        Clue clue;
+        if (serverOutput.equals(serverStartedMessage)) {
+            return CheckResult.wrong("After the client connects to the server you should output the received data!");
+        }
 
-        //Test cases to check add() method
-        //#1
-        output = "The file file1 added successfully";
-        feedback = "Failed to add file1. The answer to command \"add file1\" should be " +
-            "\"The file file1 added successfully\\n\"";
-        input = "add file1\n" +
-            "exit";
-        clue = new Clue(output, feedback);
-        inputsWithClues.put(input, clue);
+        if (!serverOutput.contains("Received: Give me everything you have!")) {
+            return CheckResult.wrong("Server output should contain \"Received: Give me everything you have!\"");
+        }
 
-        //#2
-        output = "The file file2 added successfully";
-        feedback = "Wrong answer on action \"add\"";
-        input = "add file2\n" +
-            "exit";
-        clue = new Clue(output, feedback);
-        inputsWithClues.put(input, clue);
+        if (!serverOutput.contains("Sent: All files were sent!")) {
+            return CheckResult.wrong("Server output should contain \"Sent: All files were sent!\"");
+        }
 
+        if (serverOutput.indexOf("Sent: All files were sent!") < serverOutput.indexOf("Received: Give me everything you have!")) {
+            return CheckResult.wrong("The server should print \"Sent: All files were sent!\" only after " +
+                "\"Received: Give me everything you have!\" was printed!");
+        }
 
-        //#3
-        output = "The file file3 added successfully";
-        feedback = "Wrong answer on action \"add\"";
-        input = "add file3\n" +
-            "exit";
-        clue = new Clue(output, feedback);
-        inputsWithClues.put(input, clue);
+        if (!clientOutput.contains("Sent: Give me everything you have!")) {
+            return CheckResult.wrong("Client output should contain \"Sent: Give me everything you have!\"");
+        }
 
-        //#4
-        output = "The file file4 added successfully";
-        feedback = "Failed to add file4. The answer to command \"add file4\" should be " +
-            "\"The file file4 added successfully\\n\"";
-        input = "add file4\n" +
-            "exit";
-        clue = new Clue(output, feedback);
-        inputsWithClues.put(input, clue);
+        if (!clientOutput.contains("Received: All files were sent!")) {
+            return CheckResult.wrong("Client output should contain \"Received: All files were sent!\"");
+        }
 
-        //#5
-        output = "The file file5 added successfully";
-        feedback = "Wrong answer on action \"add\"";
-        input = "add file5\n" +
-            "exit";
-        clue = new Clue(output, feedback);
-        inputsWithClues.put(input, clue);
+        if (clientOutput.indexOf("Received: All files were sent!") < clientOutput.indexOf("Sent: Give me everything you have!")) {
+            return CheckResult.wrong("The client should print \"Received: All files were sent!\" only after " +
+                "\"Sent: Give me everything you have!\" was printed!");
+        }
 
-        //#6
-        output = "The file file6 added successfully";
-        feedback = "Wrong answer on action \"add\"";
-        input = "add file6\n" +
-            "exit";
-        clue = new Clue(output, feedback);
-        inputsWithClues.put(input, clue);
-
-        //#7
-        output = "The file file7 added successfully";
-        feedback = "Wrong answer on action \"add\"";
-        input = "add file7\n" +
-            "exit";
-        clue = new Clue(output, feedback);
-        inputsWithClues.put(input, clue);
-
-        //#8
-        output = "The file file8 added successfully";
-        feedback = "Failed to add file8. The answer to command \"add file8\" should be " +
-            "\"The file file8 added successfully\\n\"";
-        input = "add file8\n" +
-            "exit";
-        clue = new Clue(output, feedback);
-        inputsWithClues.put(input, clue);
-
-        //#9
-        output = "The file file9 added successfully";
-        feedback = "Failed to add file9. The answer to command \"add file9\" should be " +
-            "\"The file file9 added successfully\\n\"";
-        input = "add file9\n" +
-            "exit";
-        clue = new Clue(output, feedback);
-        inputsWithClues.put(input, clue);
-
-        //#10
-        output = "The file file10 added successfully";
-        feedback = "Wrong answer on action \"add\"";
-        input = "add file10\n" +
-            "exit";
-        clue = new Clue(output, feedback);
-        inputsWithClues.put(input, clue);
-
-        //Testing wrong names to add
-        //#11
-        output = "Cannot add the file fileWrong";
-        feedback = "Wrong answer on action \"add\"";
-        input = "add fileWrong\n" +
-            "exit";
-        clue = new Clue(output, feedback);
-        inputsWithClues.put(input, clue);
-
-        //#12
-        output = "Cannot add the file file11";
-        feedback = "Incorrect reaction to add file11. The answer to command \"add file11\" should be " +
-            "\"Cannot add the file file11\\n\", as only filenames file1, file2..file10 are allowed at this stage.";
-        input = "add file11\n" +
-            "exit";
-        clue = new Clue(output, feedback);
-        inputsWithClues.put(input, clue);
-
-        //#13
-        output = "The file file1 added successfully\n" +
-            "Cannot add the file file1";
-        feedback = "Incorrect reaction to attempt of adding existing file. The answer to second command \"add file1\" should be " +
-            "\"Cannot add the file file1\\n\", as only one file of such name could be added";
-        input = "add file1\n" +
-            "add file1\n" +
-            "exit";
-        clue = new Clue(output, feedback);
-        inputsWithClues.put(input, clue);
-
-        //Test cases to check get() method
-        //#14
-        output = "The file file1 not found";
-        feedback = "Incorrect reaction to get file1. The answer to command \"get file1\" should be " +
-            "\"The file file1 not found\\n\", if it was not added.";
-        input = "get file1\n" +
-            "exit";
-        clue = new Clue(output, feedback);
-        inputsWithClues.put(input, clue);
-
-        //#15
-        output = "The file file2 not found";
-        feedback = "Wrong answer on action \"get\"";
-        input = "get file2\n" +
-            "exit";
-        clue = new Clue(output, feedback);
-        inputsWithClues.put(input, clue);
-
-        //#16
-        output = "The file file1 added successfully\n" +
-            "The file file1 was sent";
-        feedback = "Wrong answer on action \"get\"";
-        input = "add file1\n" +
-            "get file1\n" +
-            "exit";
-        clue = new Clue(output, feedback);
-        inputsWithClues.put(input, clue);
-
-        //#17
-        output = "The file file2 added successfully\n" +
-            "The file file2 was sent";
-        feedback = "Wrong answer on action \"get\"";
-        input = "add file2\n" +
-            "get file2\n" +
-            "exit";
-        clue = new Clue(output, feedback);
-        inputsWithClues.put(input, clue);
-
-        //Test cases to check delete() method
-        //#18
-        output = "The file file1 not found";
-        feedback = "Incorrect reaction to delete file1. The answer to command \"delete file1\" should be " +
-            "\"The file file1 not found\\n\", if it was not added.";
-        input = "delete file1\n" +
-            "exit";
-        clue = new Clue(output, feedback);
-        inputsWithClues.put(input, clue);
-
-        //#19
-        output = "The file file3 not found";
-        feedback = "Wrong answer on action \"delete\"";
-        input = "delete file3\n" +
-            "exit";
-        clue = new Clue(output, feedback);
-        inputsWithClues.put(input, clue);
-
-        //#20
-        output = "The file file1 added successfully\n" +
-            "The file file1 was deleted";
-        feedback = "Wrong answer on action \"delete\"";
-        input = "add file1\n" +
-            "delete file1\n" +
-            "exit";
-        clue = new Clue(output, feedback);
-        inputsWithClues.put(input, clue);
-
-        //#21
-        output = "The file file4 added successfully\n" +
-            "The file file4 was deleted";
-        feedback = "Incorrect reaction to delete file4. The answer to command \"delete file4\" should be " +
-            "\"The file file4 was deleted\\n\", if it was added before.";
-        input = "add file4\n" +
-            "delete file4\n" +
-            "exit";
-        clue = new Clue(output, feedback);
-        inputsWithClues.put(input, clue);
-
-        //#22
-        output = "The file file1 added successfully\n" +
-            "The file file1 was deleted\n" +
-            "The file file1 not found";
-        feedback = "Incorrect reaction to delete file1. The answer to command \"delete file1\" should be " +
-            "\"The file file1 not found\", if it was deleted before.";
-        input = "add file1\n" +
-            "delete file1\n" +
-            "get file1\n" +
-            "exit";
-        clue = new Clue(output, feedback);
-        inputsWithClues.put(input, clue);
-
-        //#23
-        output = "The file file1 added successfully\n" +
-            "The file file1 was deleted\n" +
-            "The file file1 added successfully";
-        feedback = "Wrong answer on action \"delete\"";
-        input = "add file1\n" +
-            "delete file1\n" +
-            "add file1\n" +
-            "exit";
-        clue = new Clue(output, feedback);
-        inputsWithClues.put(input, clue);
-
-        //Test case to check exit()
-        //#24
-        output = "";
-        feedback = "Incorrect reaction to exit. The reaction to command \"exit\" should be " +
-            "the end of the Server execution.";
-        input = "exit";
-        clue = new Clue(output, feedback);
-        inputsWithClues.put(input, clue);
-
-        return inputsWithClues;
+        return CheckResult.correct();
     }
 }
