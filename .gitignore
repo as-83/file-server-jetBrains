@@ -2,3 +2,5 @@
 /gradle/
 /.gradle/
 /File Server/task/build/
+**.class
+**.data
