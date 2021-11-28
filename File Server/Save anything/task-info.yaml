@@ -413,6 +413,30 @@ files:
 
 
   learner_created: false
+- name: src/server/Request.java
+  visible: true
+  learner_created: true
+- name: src/utils/Response.java
+  visible: true
+  learner_created: true
+- name: src/utils/FileUtil.java
+  visible: true
+  learner_created: true
+- name: src/utils/SerializationUtils.java
+  visible: true
+  learner_created: true
+- name: src/server/ClientHandler.java
+  visible: true
+  learner_created: true
+- name: src/mytst/Main.java
+  visible: true
+  learner_created: true
+- name: src/server/data/filesById.data
+  visible: true
+  learner_created: true
 feedback_link: https://hyperskill.org/projects/52/stages/286/implement#comment
-status: Unchecked
-record: -1
+status: Solved
+feedback:
+  message: Congratulations!
+  time: Sun, 28 Nov 2021 11:05:39 UTC
+record: 3

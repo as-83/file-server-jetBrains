@@ -1,92 +1,73 @@
 package server;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import utils.FileUtil;
+import utils.Response;
+import utils.SerializationUtils;
+
+import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.HashSet;
-import java.util.Scanner;
-import java.util.Set;
+import java.nio.file.Files;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+//Server
 public class Main {
-    static Set<String> files = new HashSet<>();
-    static Scanner scanner = new Scanner(System.in);
+    protected static final String PATH = System.getProperty("user.dir") +
+            File.separator + "src" + File.separator + "server" + File.separator + "data";
+   // protected static final String PATH = "D:" + File.separator + "sul"  + File.separator + "data" + File.separator;
+
+    protected static final String SERIALIZATION_FILE  = "filesById.data";
+
     private static final int PORT = 23456;
     public static final String ADDRESS = "127.0.0.1";
-
+    protected static Map<Integer, String> filesMap;
+    protected volatile static boolean isStopped = false;
     public static void main(String[] args) {
-        System.out.println("Server started!");
-        interactWithUser(); //stage 1 implementation
-        try (ServerSocket serverSocket = new ServerSocket(PORT, 50, InetAddress.getByName(ADDRESS))) {
-            try (Socket socket = serverSocket.accept();
-                 DataInputStream input = new DataInputStream(socket.getInputStream());
-                 DataOutputStream output = new DataOutputStream(socket.getOutputStream());
-                 ) {
-
-                String inputString = input.readUTF();
-                System.out.println("Received: " + inputString);
-                output.writeUTF("All files were sent!");
-                System.out.println("Sent: All files were sent!");
+        if (FileUtil.isFileExist(SERIALIZATION_FILE, PATH) && FileUtil.fileHasContent(SERIALIZATION_FILE, PATH)) {
+            try {
+                filesMap = (ConcurrentHashMap<Integer, String>) SerializationUtils.deserialize(PATH + File.separator + SERIALIZATION_FILE);
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
             }
+        } else {
+            filesMap = new ConcurrentHashMap<>();
+        }
+
+
+        System.out.println("Server started!");
+        ExecutorService executor = Executors.newCachedThreadPool();
+
+        try (ServerSocket serverSocket = new ServerSocket(PORT, 50, InetAddress.getByName(ADDRESS))) {
+
+                while (!isStopped) {
+
+                    Socket socket = serverSocket.accept();
+                    ClientHandler clientHandler = new ClientHandler(socket);
+                    executor.submit(clientHandler);
+                    Thread.sleep(50);
+
+                }
+            executor.shutdown();
+
         } catch (UnknownHostException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
 
     }
 
-    private static void interactWithUser() {
-        boolean isStopped = true;
-        while (!isStopped) {
-            String [] commands = scanner.nextLine().split(" ");
-            switch (commands[0]){
-                case "add":
-                    add(commands[1]); break;
-                case "get":
-                    get(commands[1]); break;
-                case "delete":
-                    delete(commands[1]); break;
-                case "exit":
-                    isStopped = false; break;
-                default:
-                    System.out.println("Unknown command! Try again!");
-            }
 
-        }
-
-    }
-
-    private static void add(String fileName) {
-        if (!fileName.matches("(file[1-9])||(file10)") || files.contains(fileName)) {
-            System.out.println("Cannot add the file " + fileName);
-        } else {
-            files.add(fileName);
-            System.out.println("The file " + fileName + " added successfully");
-        }
-
-    }
-
-    private static void get(String fileName) {
-        if (files.contains(fileName)) {
-            System.out.println("The file " + fileName + " was sent");
-        } else {
-            System.out.println("The file " + fileName + " not found");
-        }
-
-    }
-
-    private static void delete(String fileName) {
-        if (files.contains(fileName)) {
-            files.remove(fileName);
-            System.out.println("The file " + fileName + " was deleted");
-        } else {
-            System.out.println("The file " + fileName + " not found");
-        }
-
-    }
 
 }
+
+

@@ -238,6 +238,49 @@ files:
     }
 
   learner_created: false
+- name: src/client/Main.java
+  visible: true
+  text: |
+    package client;
+
+    import java.io.DataInputStream;
+    import java.io.DataOutputStream;
+    import java.io.IOException;
+    import java.net.InetAddress;
+    import java.net.Socket;
+    import java.net.UnknownHostException;
+
+    public class Main {
+        private static final int PORT = 23456;
+        public static final String ADDRESS = "127.0.0.1";
+
+        public static void main(String[] args) {
+            System.out.println("Client started!");
+           try( Socket socket = new Socket(InetAddress.getByName(ADDRESS), PORT);
+                DataInputStream inputStream = new DataInputStream(socket.getInputStream());
+                DataOutputStream outputStream = new DataOutputStream(socket.getOutputStream());
+                ) {
+
+
+               outputStream.writeUTF("Give me everything you have!");
+               System.out.println("Sent: Give me everything you have!");
+
+               String serverAnswer = inputStream.readUTF();
+               System.out.println("Received: " + serverAnswer);
+
+
+           } catch (UnknownHostException e) {
+               e.printStackTrace();
+           } catch (IOException e) {
+               e.printStackTrace();
+           }
+
+        }
+    }
+  learner_created: true
+- name: src/server/data/test_purpose_8AHCJO4.txt
+  visible: true
+  learner_created: true
 feedback_link: https://hyperskill.org/projects/52/stages/285/implement#comment
-status: Unchecked
-record: -1
+status: Solved
+record: 4
